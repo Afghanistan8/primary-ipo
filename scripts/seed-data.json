@@ -1,0 +1,32 @@
+[
+  {
+    "opp_id": "dangote-refinery",
+    "name": "Dangote Petroleum Refinery",
+    "type": "private",
+    "continent": "africa",
+    "country": "Nigeria",
+    "flag_emoji": "NG",
+    "source_url": "https://en.wikipedia.org/wiki/Dangote_Refinery",
+    "status_hint": "open"
+  },
+  {
+    "opp_id": "spacex",
+    "name": "SpaceX",
+    "type": "ipo",
+    "continent": "north-america",
+    "country": "United States",
+    "flag_emoji": "US",
+    "source_url": "https://en.wikipedia.org/wiki/SpaceX",
+    "status_hint": "open"
+  },
+  {
+    "opp_id": "revolut",
+    "name": "Revolut",
+    "type": "ipo",
+    "continent": "europe",
+    "country": "United Kingdom",
+    "flag_emoji": "GB",
+    "source_url": "https://en.wikipedia.org/wiki/Revolut",
+    "status_hint": "upcoming"
+  }
+]
