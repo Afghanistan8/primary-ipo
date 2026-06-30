@@ -92,12 +92,13 @@ const OPPORTUNITIES = [
     continent: 'africa',
     country: 'Nigeria',
     flag: '🇳🇬',
-    status: 'open',
-    raise: '$1B private placement',
-    valuation: '$39.1B (placement) · ~$50B IPO target',
-    keyDate: 'Sept 2026 — NGX IPO · LSE dual-list under review',
+    status: 'upcoming',
+    raise: '$1B placement closed · ~$5B IPO target',
+    valuation: '$39.1B (placement) · $40–50B IPO target',
+    keyDate: 'Placement closed Jun 2026 · IPO halted by SEC Nigeria (Jun 23) — awaiting formal filing',
+    dataAsOf: 'Jun 30, 2026',
     summary:
-      'Africa\'s largest single-train refinery (650,000 bpd). $1B private placement at $39.1B valuation now open — investor demand has already exceeded $2B, suggesting oversubscription. Pan-African IPO targeting ~$50B valuation expected September 2026 on NGX, potentially Africa\'s largest listing ever.',
+      'Africa\'s largest single-train refinery (650,000 bpd). The $1B private placement at $39.1B closed in June 2026, oversubscribed at $2B+. The planned NGX IPO is now on pause: on June 23, 2026, the Nigerian SEC issued a halt order on IPO marketing pending formal filing. Public subscription window expected once SEC clearance and prospectus land.',
     where: [
       { name: 'Stanbic IBTC Capital', role: 'Lead issuing house · international book', region: 'Nigeria + foreign', url: 'https://www.stanbicibtc.com' },
       { name: 'Vetiva Capital', role: 'Issuing house · retail distribution', region: 'Nigeria retail', url: 'https://www.vetiva.com' },
@@ -118,11 +119,12 @@ const OPPORTUNITIES = [
     country: 'United Kingdom',
     flag: '🇬🇧',
     status: 'upcoming',
-    raise: 'IPO TBD · $100B+ secondary H2 2026',
-    valuation: '$75B (current) · $150–200B IPO target',
-    keyDate: '2027–2028 — NASDAQ preferred over LSE',
+    raise: 'IPO not filed · $115B secondary planned H2 2026',
+    valuation: '$75B (Nov 2025) · $115B (next secondary) · $150–200B IPO target',
+    keyDate: '~2028 IPO · No S-1 filed · NASDAQ preferred over LSE',
+    dataAsOf: 'Jun 30, 2026',
     summary:
-      'UK fintech with 68M+ retail users. Last valued at $75B (Nov 2025 secondary). CEO Storonsky confirmed April 2026 that IPO is ~2 years away (2027–2028), with NASDAQ preferred over LSE for liquidity. New secondary at $100B+ planned H2 2026. Targeting $150–200B at IPO. 2026 guidance: $9B revenue, $3.5B profit.',
+      'UK fintech with 70M+ retail users. Last priced at $75B in a Nov 2025 secondary. CEO Storonsky (Apr 2026) said IPO is ~2 years out, pointing to 2028. Bloomberg (Jun 2026) reported a secondary share sale being prepared at $115B; eventual IPO target reportedly $150–200B. Full UK banking licence secured Mar 2026; US national bank charter pending OCC review. 2025 pre-tax profit £1.7B (+57%); 2026 guidance $9B revenue, $3.5B profit.',
     where: [
       { name: 'Forge Global · EquityZen · Hiive', role: 'Pre-IPO secondary (accredited)', region: 'US accredited investors', url: 'https://forgeglobal.com' },
       { name: 'Robinhood · Fidelity · Charles Schwab', role: 'IPO allocation when filed', region: 'US retail', url: 'https://robinhood.com' },
@@ -141,12 +143,13 @@ const OPPORTUNITIES = [
     continent: 'north-america',
     country: 'United States',
     flag: '🇺🇸',
-    status: 'open',
-    raise: '$75B — largest IPO in history',
-    valuation: '$1.75 trillion',
-    keyDate: 'TODAY · Jun 12, 2026 — NASDAQ debut as SPCX at $135/share',
+    status: 'closed',
+    raise: '$75B raised (Jun 12, 2026) — largest IPO in history',
+    valuation: '$1.75T at IPO · ~$2.16T (Jun 30, 2026)',
+    keyDate: 'Listed Jun 12, 2026 on NASDAQ as SPCX · NASDAQ-100 inclusion Jul 7, 2026',
+    dataAsOf: 'Jun 30, 2026',
     summary:
-      'Debuts on NASDAQ today (June 12, 2026) under ticker SPCX at $135/share — largest IPO in market history. 30% of the issue (~$22.5B) allocated to retail, triple the industry norm. Direct retail access in US, UK, EU, Australia, Canada, Japan, South Korea. Nasdaq 100 inclusion expected ~15 days post-listing, forcing $22–27B of mechanical index buying.',
+      'IPO complete. Priced at $135 on Jun 11; opened $150 on Jun 12 and closed Day 1 at $161 (+19%). Hit all-time high $225.64 on Jun 16, then pulled back; trading near $164 as of Jun 30. Primary subscription window is closed — opportunity now is the structural buying pressure ahead of NASDAQ-100 inclusion on Jul 7 (analysts estimate $22–27B of forced index buying against a 4% float).',
     where: [
       { name: 'Fidelity', role: 'IPO allocation at offer price ($135)', region: 'US retail', url: 'https://www.fidelity.com' },
       { name: 'Robinhood', role: 'IPO allocation at offer price ($135)', region: 'US retail', url: 'https://robinhood.com' },
@@ -391,7 +394,9 @@ function OpportunityCard({ o, onVouch, onFlag, onWatch, txPending }) {
           style={{ color: 'var(--ink-faint)', borderColor: 'var(--border-soft)' }}
         >
           <span>SOURCE · {o.sourceLabel}</span>
-          <span className="uppercase tracking-widest">Info only · not advice</span>
+          <span className="uppercase tracking-widest">
+            {o.dataAsOf ? `Data as of ${o.dataAsOf} · ` : ''}Info only · not advice
+          </span>
         </div>
 
         {/* Action row — only for on-chain opportunities */}
