@@ -1,7 +1,14 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { listAll } from '../lib/genlayer';
+import {
+  listAll,
+  submitOpportunity,
+  vouch as vouchTx,
+  flag as flagTx,
+  addToWatchlist,
+} from '../lib/genlayer';
+import { useWallet, WalletModal } from './WalletConnect';
 import {
   Globe,
   ArrowUpRight,
@@ -231,7 +238,8 @@ function TypePill({ type }) {
   );
 }
 
-function OpportunityCard({ o }) {
+function OpportunityCard({ o, onVouch, onFlag, onWatch, txPending }) {
+  const isChain = o.sourceLabel && o.sourceLabel.includes('on-chain');
   return (
     <article
       className="relative rounded-sm transition-all hover:translate-y-[-2px]"
@@ -385,8 +393,104 @@ function OpportunityCard({ o }) {
           <span>SOURCE · {o.sourceLabel}</span>
           <span className="uppercase tracking-widest">Info only · not advice</span>
         </div>
+
+        {/* Action row — only for on-chain opportunities */}
+        {isChain && (
+          <div className="flex items-center gap-2 mt-4">
+            <button
+              disabled={txPending}
+              onClick={() => onVouch && onVouch(o.id)}
+              className="flex-1 font-mono text-[10px] uppercase tracking-widest py-2 rounded-sm transition-colors"
+              style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--live)', cursor: txPending ? 'wait' : 'pointer' }}
+              title="Endorse this opportunity — builds your on-chain reputation"
+            >
+              ▲ Vouch {o.vouch_count ? `(${o.vouch_count})` : ''}
+            </button>
+            <button
+              disabled={txPending}
+              onClick={() => onFlag && onFlag(o.id)}
+              className="flex-1 font-mono text-[10px] uppercase tracking-widest py-2 rounded-sm transition-colors"
+              style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--accent)', cursor: txPending ? 'wait' : 'pointer' }}
+              title="Flag if outdated, wrong, or suspicious"
+            >
+              ⚑ Flag {o.flag_count ? `(${o.flag_count})` : ''}
+            </button>
+            <button
+              disabled={txPending}
+              onClick={() => onWatch && onWatch(o.id)}
+              className="font-mono text-[10px] uppercase tracking-widest py-2 px-3 rounded-sm transition-colors"
+              style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--ink-muted)', cursor: txPending ? 'wait' : 'pointer' }}
+              title="Save to your wallet-bound watchlist"
+            >
+              ☆
+            </button>
+          </div>
+        )}
       </div>
     </article>
+  );
+}
+
+// ── Submit modal: form for a new opportunity ───────────────────────────
+function SubmitModal({ open, onClose, onSubmit, pending }) {
+  const [form, setForm] = useState({
+    opp_id: '', name: '', type: 'ipo', continent: 'africa',
+    country: '', flag_emoji: '', source_url: '', status_hint: 'open',
+  });
+  if (!open) return null;
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const inputStyle = {
+    width: '100%', background: 'var(--bg)', border: '1px solid var(--border)',
+    color: 'var(--ink)', padding: '8px 10px', borderRadius: 4,
+    fontFamily: 'JetBrains Mono, monospace', fontSize: 12, marginBottom: 10,
+  };
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', overflowY: 'auto', padding: 16 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: 'min(540px, 96vw)', maxHeight: '92vh', overflowY: 'auto', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 28 }}>
+        <h2 className="font-display text-2xl mb-1" style={{ color: 'var(--ink)' }}>Submit an opportunity</h2>
+        <p className="font-mono text-[11px] mb-3" style={{ color: 'var(--ink-muted)', lineHeight: 1.6 }}>
+          Help the registry grow. Add a real IPO, private placement, or token sale you've spotted.
+        </p>
+        <div className="font-mono text-[10px] mb-5 p-3 rounded-sm" style={{ background: 'var(--surface-2)', border: '1px solid var(--border-soft)', color: 'var(--ink-muted)', lineHeight: 1.6 }}>
+          <strong style={{ color: 'var(--ink)' }}>What happens next:</strong> validators independently fetch your
+          source URL, an LLM checks the claim, and 5 validators must agree. Your <strong style={{ color: 'var(--accent)' }}>0.1 GEN bond</strong> is
+          refunded if the entry is VERIFIED. Takes 60–180 seconds.
+        </div>
+        <input style={inputStyle} placeholder="unique id (e.g. revolut-ipo)" value={form.opp_id} onChange={(e) => set('opp_id', e.target.value)} />
+        <input style={inputStyle} placeholder="name (e.g. Revolut)" value={form.name} onChange={(e) => set('name', e.target.value)} />
+        <select style={inputStyle} value={form.type} onChange={(e) => set('type', e.target.value)}>
+          <option value="ipo">Traditional IPO</option>
+          <option value="private">Private Placement</option>
+          <option value="crypto">Crypto Sale</option>
+        </select>
+        <select style={inputStyle} value={form.continent} onChange={(e) => set('continent', e.target.value)}>
+          <option value="africa">Africa</option>
+          <option value="asia">Asia</option>
+          <option value="europe">Europe</option>
+          <option value="north-america">North America</option>
+          <option value="south-america">South America</option>
+        </select>
+        <input style={inputStyle} placeholder="country (e.g. Nigeria)" value={form.country} onChange={(e) => set('country', e.target.value)} />
+        <input style={inputStyle} placeholder="flag — emoji or 2-letter ISO code (e.g. NG)" value={form.flag_emoji} onChange={(e) => set('flag_emoji', e.target.value)} />
+        <input style={inputStyle} placeholder="source URL (Wikipedia or official filing works best)" value={form.source_url} onChange={(e) => set('source_url', e.target.value)} />
+        <select style={inputStyle} value={form.status_hint} onChange={(e) => set('status_hint', e.target.value)}>
+          <option value="open">Open</option>
+          <option value="upcoming">Upcoming</option>
+          <option value="closed">Closed</option>
+        </select>
+        <div className="flex gap-2 mt-2">
+          <button onClick={onClose} className="flex-1 font-mono text-xs py-2 rounded-sm" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--ink-muted)' }}>Cancel</button>
+          <button
+            disabled={pending}
+            onClick={() => onSubmit(form)}
+            className="flex-1 font-mono text-xs py-2 rounded-sm"
+            style={{ background: 'var(--accent)', border: '1px solid var(--accent)', color: 'var(--bg)', cursor: pending ? 'wait' : 'pointer' }}
+          >
+            {pending ? 'Submitting…' : 'Submit (0.1 GEN bond)'}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -451,6 +555,87 @@ export default function App() {
 
   useEffect(() => { loadOpps(); }, []);
 
+  // ── Wallet + write state ─────────────────────────────────────────────
+  const { address, connect, disconnect } = useWallet();
+  const [walletModalOpen, setWalletModalOpen] = useState(false);
+  const [submitOpen, setSubmitOpen] = useState(false);
+  const [txPending, setTxPending] = useState(false);
+  const [txMessage, setTxMessage] = useState('');
+
+  function requireWallet() {
+    if (!address) {
+      setWalletModalOpen(true);
+      return false;
+    }
+    return true;
+  }
+
+  async function handleSubmit(form) {
+    if (!requireWallet()) return;
+    try {
+      setTxPending(true);
+      setTxMessage('Submitting + running validator consensus (60–180s)…');
+      await submitOpportunity(form);
+      setTxMessage('Submitted! Refreshing feed…');
+      setSubmitOpen(false);
+      await loadOpps();
+    } catch (e) {
+      setTxMessage('Submit failed: ' + (e?.message || 'unknown error'));
+    } finally {
+      setTxPending(false);
+      setTimeout(() => setTxMessage(''), 6000);
+    }
+  }
+
+  async function handleVouch(oppId) {
+    if (!requireWallet()) return;
+    try {
+      setTxPending(true);
+      setTxMessage('Submitting vouch…');
+      await vouchTx(oppId);
+      setTxMessage('Vouch confirmed.');
+      await loadOpps();
+    } catch (e) {
+      setTxMessage('Vouch failed: ' + (e?.message || 'unknown error'));
+    } finally {
+      setTxPending(false);
+      setTimeout(() => setTxMessage(''), 4000);
+    }
+  }
+
+  async function handleFlag(oppId) {
+    if (!requireWallet()) return;
+    const reason = window.prompt('Why are you flagging this? (scam / outdated / wrong-info / other)');
+    if (!reason) return;
+    try {
+      setTxPending(true);
+      setTxMessage('Submitting flag…');
+      await flagTx(oppId, reason);
+      setTxMessage('Flag confirmed.');
+      await loadOpps();
+    } catch (e) {
+      setTxMessage('Flag failed: ' + (e?.message || 'unknown error'));
+    } finally {
+      setTxPending(false);
+      setTimeout(() => setTxMessage(''), 4000);
+    }
+  }
+
+  async function handleWatchlist(oppId) {
+    if (!requireWallet()) return;
+    try {
+      setTxPending(true);
+      setTxMessage('Adding to watchlist…');
+      await addToWatchlist(oppId);
+      setTxMessage('Added to watchlist.');
+    } catch (e) {
+      setTxMessage('Watchlist failed: ' + (e?.message || 'unknown error'));
+    } finally {
+      setTxPending(false);
+      setTimeout(() => setTxMessage(''), 4000);
+    }
+  }
+
     const continentCounts = useMemo(
     () =>
       CONTINENTS.reduce((acc, c) => {
@@ -506,6 +691,32 @@ export default function App() {
                 />
                 {liveCount} live offerings
               </div>
+              <button
+                onClick={() => { if (requireWallet()) setSubmitOpen(true); }}
+                className="font-mono text-xs px-3 py-2 rounded-sm"
+                style={{ background: 'var(--surface)', border: '1px solid var(--accent)', color: 'var(--accent)' }}
+                title="Submit a new opportunity for AI verification"
+              >
+                + Submit
+              </button>
+              {address ? (
+                <button
+                  onClick={disconnect}
+                  className="font-mono text-xs px-3 py-2 rounded-sm"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--ink)' }}
+                  title="Disconnect"
+                >
+                  {address.slice(0, 6)}…{address.slice(-4)}
+                </button>
+              ) : (
+                <button
+                  onClick={() => setWalletModalOpen(true)}
+                  className="font-mono text-xs px-3 py-2 rounded-sm"
+                  style={{ background: 'var(--accent)', border: '1px solid var(--accent)', color: 'var(--bg)' }}
+                >
+                  Connect Wallet
+                </button>
+              )}
             </div>
           </div>
         </header>
@@ -534,8 +745,9 @@ export default function App() {
                 className="font-body text-base leading-relaxed max-w-2xl"
                 style={{ color: 'var(--ink-muted)' }}
               >
-                IPOs, private placements, and token sales — discovered, verified by GenLayer validator
-                consensus, and translated into the rails you can actually use from where you live.
+                Anyone can submit an opportunity. GenLayer validators independently fetch the source URL,
+                an LLM judges the claim, and 5 validators must agree before the entry is stamped VERIFIED
+                on-chain. Verified entries appear in the public feed — visible to anyone, anywhere.
                 Information only. Always do your own research.
               </p>
             </div>
@@ -547,9 +759,9 @@ export default function App() {
                 <div className="mb-2 uppercase tracking-widest" style={{ color: 'var(--ink-faint)' }}>
                   How it works
                 </div>
-                <div>01 · Validators scan filings &amp; launchpads</div>
-                <div>02 · Consensus on what's real</div>
-                <div>03 · You see the rails for your jurisdiction</div>
+                <div>01 · User submits opportunity + source URL</div>
+                <div>02 · 5 validators independently verify vs. source</div>
+                <div>03 · Consensus → entry appears in the feed</div>
               </div>
             </div>
           </div>
@@ -647,7 +859,7 @@ export default function App() {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
               {filtered.map((o) => (
-                <OpportunityCard key={o.id} o={o} />
+                <OpportunityCard key={o.id} o={o} onVouch={handleVouch} onFlag={handleFlag} onWatch={handleWatchlist} txPending={txPending} />
               ))}
             </div>
           )}
@@ -674,6 +886,35 @@ export default function App() {
             </p>
           </div>
         </footer>
+
+        <WalletModal
+          open={walletModalOpen}
+          onClose={() => setWalletModalOpen(false)}
+          onConnect={async (id) => { await connect(id); setWalletModalOpen(false); }}
+        />
+
+        <SubmitModal
+          open={submitOpen}
+          onClose={() => setSubmitOpen(false)}
+          onSubmit={handleSubmit}
+          pending={txPending}
+        />
+
+        {txMessage && (
+          <div
+            className="fixed left-1/2 z-[1100] font-mono text-xs px-4 py-3 rounded-sm shadow-lg"
+            style={{
+              bottom: 64,
+              transform: 'translateX(-50%)',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--accent)',
+              color: 'var(--ink)',
+              maxWidth: '90vw',
+            }}
+          >
+            {txMessage}
+          </div>
+        )}
       </div>
     </>
   );
